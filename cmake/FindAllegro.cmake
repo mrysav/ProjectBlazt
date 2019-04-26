@@ -15,7 +15,7 @@ if(WIN32)
         ${CMAKE_BINARY_DIR}/${ALLEGRO_PATH}/bin ${ALLEGRO_PATH}/bin)
 else(WIN32)
     find_package(PkgConfig)
-    pkg_check_modules(PC_ALLEGRO QUIET allegro-5.0)
+    pkg_check_modules(PC_ALLEGRO QUIET allegro-5)
     set(ALLEGRO_DEFINITIONS ${PC_ALLLEGRO_CFLAGS_OTHER})
 
     set(ALLEGRO_INCLUDE_HINTS
@@ -28,23 +28,23 @@ find_path(ALLEGRO_INCLUDE_DIR allegro5/allegro.h
     HINTS ${ALLEGRO_INCLUDE_HINTS})
 
 find_library(ALLEGRO_LIBRARY
-    NAMES allegro allegro-5.0.2-mt
+    NAMES allegro allegro-5
     HINTS ${ALLEGRO_LIBRARY_HINTS})
 
 find_library(ALLEGRO_FONT_LIBRARY
-    NAMES allegro_font allegro_font-5.0.2-mt
+    NAMES allegro_font allegro_font-5
     HINTS ${ALLEGRO_LIBRARY_HINTS})
 
 find_library(ALLEGRO_IMAGE_LIBRARY
-    NAMES allegro_image allegro_image-5.0.2-mt
+    NAMES allegro_image allegro_image-5
     HINTS ${ALLEGRO_LIBRARY_HINTS})
 
 find_library(ALLEGRO_TTF_LIBRARY
-    NAMES allegro_ttf allegro_ttf-5.0.2-mt
+    NAMES allegro_ttf allegro_ttf-5
     HINTS ${ALLEGRO_LIBRARY_HINTS})
 
 find_library(ALLEGRO_PRIMITIVES_LIBRARY
-    NAMES allegro_primitives allegro_primitives-5.0.2-mt
+    NAMES allegro_primitives allegro_primitives-5
     HINTS ${ALLEGRO_LIBRARY_HINTS})
 
 set(ALLEGRO_LIBRARIES

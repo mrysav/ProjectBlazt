@@ -9,10 +9,15 @@ enable_testing()
 find_package(Allegro REQUIRED)
 
 include_directories(
+    ${PROJECT_SOURCE_DIR}/src
     ${ALLEGRO_INCLUDE_DIRS}
 )
 
-add_executable(ProjectBlazt game.c)
+file(GLOB all_SRCS
+        "${PROJECT_SOURCE_DIR}/src/*.c"
+        )
+
+add_executable(ProjectBlazt ${all_SRCS})
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

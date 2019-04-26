@@ -7,6 +7,7 @@
 #include <allegro5/allegro_primitives.h>
 
 #include "game.h"
+#include "menu.h"
 
 void must_init(bool test, const char *description)
 {
@@ -82,6 +83,7 @@ int main()
                 if(key[ALLEGRO_KEY_UP]) {
                     accy = -1;
                     idle = false;
+                    MenuState.processInput(0);
                 }
                 // if(key[ALLEGRO_KEY_DOWN])
                 //     // accy = 1;
