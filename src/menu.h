@@ -3,10 +3,18 @@
 
 #include "state.h"
 
-void menu_processInput(int* keys);
+typedef struct MenuState {
+    int selected;
+} MenuState;
+
+const GameState MENU_STATE;
+
+State menu_processInput(unsigned char* keys);
 
 void menu_updateFrame();
 
-const GameState MenuState;
+void menu_loadResources();
+
+void menu_unloadResources();
 
 #endif
