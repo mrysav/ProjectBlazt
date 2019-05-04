@@ -5,6 +5,7 @@
 
 #include "input.h"
 #include "game.h"
+#include "background.h"
 
 const GameState GAME_STATE = {
     &game_loadResources,
@@ -50,5 +51,8 @@ State game_processInput(unsigned char* keys) {
 }
 
 void game_updateFrame() {
+
+    drawBackground(SKY);
+
     al_draw_filled_rectangle(state.x, state.y, state.x + 40, state.y + 40, al_map_rgb(255, 0, 0));
 }

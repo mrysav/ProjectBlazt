@@ -8,6 +8,7 @@
 #include "menu.h"
 #include "input.h"
 #include "state.h"
+#include "background.h"
 
 const GameState MENU_STATE = { &menu_loadResources, &menu_processInput, &menu_updateFrame, &menu_unloadResources };
 
@@ -41,6 +42,8 @@ State menu_processInput(unsigned char* keys) {
 }
 
 void menu_updateFrame() {
+
+    drawBackground(BLACK);
 
     al_draw_text(font, al_map_rgb(255,255,255), 100, 100, 0, "Press space to play");
 

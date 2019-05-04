@@ -110,8 +110,6 @@ int main()
 
         if(redraw && al_is_event_queue_empty(queue))
         {
-            al_clear_to_color(al_map_rgb(0, 0, 0));
-
             gState->updateDisplay();
 
             al_flip_display();
