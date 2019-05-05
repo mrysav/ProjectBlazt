@@ -5,15 +5,14 @@
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_image.h>
 
 #include "menu.h"
 #include "game.h"
 #include "state.h"
+#include "display.h"
 
 // Defines
-
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 400
 
 #define GAME_KEY_SEEN 1
 #define GAME_KEY_RELEASED 2
@@ -49,6 +48,8 @@ int main()
     must_init(disp, "display");
 
     must_init(al_init_primitives_addon(), "primitives");
+
+    must_init(al_init_image_addon(), "images");
 
     al_register_event_source(queue, al_get_keyboard_event_source());
     al_register_event_source(queue, al_get_display_event_source(disp));
