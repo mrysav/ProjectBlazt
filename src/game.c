@@ -17,12 +17,14 @@ const GameState GAME_STATE = {
     &game_unloadResources
 };
 
-const int LEVEL_1[20][20] = {
-    { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
-    { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
-    { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
-    { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
-    { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
+#define LEVEL_1_WIDTH 20
+#define LEVEL_1_HEIGHT 20
+const int LEVEL_1[LEVEL_1_HEIGHT][LEVEL_1_WIDTH] = {
+    { 0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
+    { 2,3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
+    { 0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
+    { 0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
+    { 0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
@@ -67,18 +69,22 @@ State game_processInput(unsigned char* keys) {
 
     if(keys[ALLEGRO_KEY_UP] == KEY_HELD) {
         state.y--;
+        camera.y--;
     }
 
     if(keys[ALLEGRO_KEY_DOWN] == KEY_HELD) {
         state.y++;
+        camera.y++;
     }
 
     if(keys[ALLEGRO_KEY_RIGHT] == KEY_HELD) {
         state.x++;
+        camera.x++;
     }
 
     if(keys[ALLEGRO_KEY_LEFT] == KEY_HELD) {
         state.x--;
+        camera.x--;
     }
 
     if(keys[ALLEGRO_KEY_ESCAPE] == KEY_PRESSED) {
@@ -89,15 +95,12 @@ State game_processInput(unsigned char* keys) {
 }
 
 void drawLevel() {
-    int tileX = camera.x / TILE_WIDTH;
-    int tileY = camera.y / TILE_HEIGHT;
-    int maxTileX = tileX + MAX_TILES_X;
-    int maxTileY = tileY + MAX_TILES_Y;
-
-    for(int y = 0; y < (maxTileY - tileY); y++) {
-        for(int x = 0; x < (maxTileX - tileX); x++) {
-            int spriteId = LEVEL_1[x+tileX][y+tileY];
-            al_draw_bitmap_region(tilemap, 0, spriteId * TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT, x*TILE_WIDTH, y*TILE_HEIGHT, 0);
+    for(int y = 0; y < LEVEL_1_HEIGHT; y++) {
+        float posY = y * TILE_HEIGHT - camera.y;
+        for(int x = 0; x < LEVEL_1_WIDTH; x++) {
+            float posX = x * TILE_WIDTH - camera.x;
+            int spriteId = LEVEL_1[y][x];
+            al_draw_bitmap_region(tilemap, 0, spriteId * TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT, posX, posY, 0);
         }
     }
 }
