@@ -6,11 +6,11 @@ typedef struct VectorF {
     float y;
 } VectorF;
 
-typedef struct Rectangle {
+typedef struct RectangleF {
     float x;
     float y;
-    int width;
-    int height;
-} Rectangle;
+    float width;
+    float height;
+} RectangleF;
 
 #endif
