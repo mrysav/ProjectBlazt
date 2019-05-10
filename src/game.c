@@ -21,7 +21,7 @@ const GameState GAME_STATE = {
 #define LEVEL_1_HEIGHT 20
 const int LEVEL_1[LEVEL_1_HEIGHT][LEVEL_1_WIDTH] = {
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
-    { 2,3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
+    { 0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0, },
@@ -88,17 +88,58 @@ State game_processInput(unsigned char* keys) {
         return MENU;
     }
 
+    float vel = 1;
+
     float xB = 0;
+    float xvel = 0;
     if(keys[ALLEGRO_KEY_RIGHT] == KEY_HELD) {
-        playerBox.x++;
+        xB = playerBox.x + playerBox.width;
+        xvel = vel;
     } else if(keys[ALLEGRO_KEY_LEFT] == KEY_HELD) {
-        playerBox.x--;
+        xB = playerBox.x;
+        xvel = -vel;
     }
 
+    if (xvel != 0) {
+        int tileX = (xB + xvel) / TILE_WIDTH;
+        int topTileY = playerBox.y / TILE_HEIGHT;
+        int botTileY = (playerBox.y + playerBox.height) / TILE_HEIGHT;
+        bool collides = false;
+        for (int t = topTileY; t <= botTileY; t++) {
+            if (LEVEL_1[t][tileX] > 0) {
+                collides = true;
+                break;
+            }
+        }
+        if (!collides) {
+            playerBox.x += xvel;
+        }
+    }
+
+    float yB = 0;
+    float yvel = 0;
     if(keys[ALLEGRO_KEY_UP] == KEY_HELD) {
-        playerBox.y--;
+        yB = playerBox.y;
+        yvel = -vel;
     } else if(keys[ALLEGRO_KEY_DOWN] == KEY_HELD) {
-        playerBox.y++;
+        yB = playerBox.y + playerBox.height;
+        yvel = vel;
+    }
+
+    if (yvel != 0) {
+        int tileY = (yB + yvel) / TILE_HEIGHT;
+        int leftTileX = playerBox.x / TILE_WIDTH;
+        int rightTileX = (playerBox.x + playerBox.width) / TILE_WIDTH;
+        bool collides = false;
+        for (int t = leftTileX; t <= rightTileX; t++) {
+            if (LEVEL_1[tileY][t] > 0) {
+                collides = true;
+                break;
+            }
+        }
+        if (!collides) {
+            playerBox.y += yvel;
+        }
     }
 
     if (playerBox.x < MIN_X) {

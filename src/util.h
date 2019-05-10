@@ -13,4 +13,6 @@ typedef struct RectangleF {
     float height;
 } RectangleF;
 
+bool intersects(RectangleF* rect1, RectangleF* rect2);
+
 #endif
