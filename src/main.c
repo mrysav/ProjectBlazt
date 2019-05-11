@@ -11,6 +11,7 @@
 #include "game.h"
 #include "state.h"
 #include "display.h"
+#include "util.h"
 
 // Defines
 
@@ -42,9 +43,21 @@ int main()
 
     al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
     al_set_new_display_option(ALLEGRO_SAMPLES, 8, ALLEGRO_SUGGEST);
-    al_set_new_bitmap_flags(ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
+    // al_set_new_bitmap_flags(ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
+    al_set_new_display_flags(ALLEGRO_WINDOWED);
 
-    ALLEGRO_DISPLAY* disp = al_create_display(SCREEN_WIDTH, SCREEN_HEIGHT);
+    // calculate scaling factor
+    int sx = WINDOW_WIDTH / SCREEN_WIDTH;
+    int sy = WINDOW_HEIGHT / SCREEN_HEIGHT;
+    int scale = min(sx, sy);
+
+    int scaleW = SCREEN_WIDTH * scale;
+    int scaleH = SCREEN_HEIGHT * scale;
+    int scaleX = (WINDOW_WIDTH - scaleW) / 2;
+    int scaleY = (WINDOW_HEIGHT - scaleH) / 2;
+
+    ALLEGRO_DISPLAY* disp = al_create_display(WINDOW_WIDTH, WINDOW_HEIGHT);
+    ALLEGRO_BITMAP* buffer = al_create_bitmap(SCREEN_WIDTH, SCREEN_HEIGHT);
     must_init(disp, "display");
 
     must_init(al_init_primitives_addon(), "primitives");
@@ -111,7 +124,15 @@ int main()
 
         if(redraw && al_is_event_queue_empty(queue))
         {
+            // render a frame
+            al_set_target_bitmap(buffer);
+            // al_clear_to_color(al_map_rgb(0, 0, 0));
+
             gState->updateDisplay();
+
+            al_set_target_backbuffer(disp);
+            // sal_clear_to_color(al_map_rgb(0, 0, 0));
+            al_draw_scaled_bitmap(buffer, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, scaleX, scaleY, scaleW, scaleH, 0);
 
             al_flip_display();
 

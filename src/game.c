@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_primitives.h>
@@ -21,8 +22,8 @@ const GameState GAME_STATE = {
 #define LEVEL_1_HEIGHT 20
 const int LEVEL_1[LEVEL_1_HEIGHT][LEVEL_1_WIDTH] = {
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
-    { 0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
-    { 0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
+    { 1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
+    { 0,0,1,0,0,0,1,2,3,4,5,6,7,8,9,0,0,0,0,0, },
     { 0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
@@ -33,8 +34,8 @@ const int LEVEL_1[LEVEL_1_HEIGHT][LEVEL_1_WIDTH] = {
     { 0,0,0,0,0,0,0,0,56,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,0,0,0,0,0,0,0,65,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,0,0,0,0,0,0,0,0,56,0,0,0,0,0,0,0,0,0, },
-    { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
-    { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
+    { 0,0,0,0,0,0,0,0,0,0,55,0,0,0,61,0,0,0,0,0, },
+    { 0,0,0,0,0,0,0,0,0,0,57,0,0,60,0,0,0,0,0,0, },
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
     { 0,0,0,0,0,0,0,0,0,0,0,0,45,0,0,0,0,0,0,0, },
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, },
@@ -60,7 +61,10 @@ const static float MIN_Y = 0;
 const static float MAX_X = LEVEL_1_WIDTH * TILE_WIDTH - PLAYER_WIDTH;
 const static float MAX_Y = LEVEL_1_HEIGHT * TILE_WIDTH - PLAYER_HEIGHT;
 
-const float gravity = 9.0;
+const float gravity = 4.0;
+
+bool isJumping = false;
+float yvel = 0;
 
 RectangleF playerBox = { 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT };
 RectangleF camera = { 0 - PLAYER_X1, 0 - PLAYER_Y1, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -88,12 +92,12 @@ State game_processInput(unsigned char* keys) {
         return MENU;
     }
 
-    float vel = 1;
+    float vel = 2;
 
     float xB = 0;
     float xvel = 0;
     if(keys[ALLEGRO_KEY_RIGHT] == KEY_HELD) {
-        xB = playerBox.x + playerBox.width;
+        xB = playerBox.x + playerBox.width - 1;
         xvel = vel;
     } else if(keys[ALLEGRO_KEY_LEFT] == KEY_HELD) {
         xB = playerBox.x;
@@ -103,7 +107,7 @@ State game_processInput(unsigned char* keys) {
     if (xvel != 0) {
         int tileX = (xB + xvel) / TILE_WIDTH;
         int topTileY = playerBox.y / TILE_HEIGHT;
-        int botTileY = (playerBox.y + playerBox.height) / TILE_HEIGHT;
+        int botTileY = (playerBox.y + playerBox.height - 1) / TILE_HEIGHT;
         bool collides = false;
         for (int t = topTileY; t <= botTileY; t++) {
             if (LEVEL_1[t][tileX] > 0) {
@@ -117,29 +121,45 @@ State game_processInput(unsigned char* keys) {
     }
 
     float yB = 0;
-    float yvel = 0;
-    if(keys[ALLEGRO_KEY_UP] == KEY_HELD) {
+    if(keys[ALLEGRO_KEY_UP] == KEY_PRESSED && !isJumping) {
+        yvel = -10;
+        isJumping = true;
+    } else {
+        yvel += 1;
+        if (yvel > gravity) {
+            yvel = gravity;
+        }
+    }
+
+    if (yvel <= 0) {
         yB = playerBox.y;
-        yvel = -vel;
-    } else if(keys[ALLEGRO_KEY_DOWN] == KEY_HELD) {
-        yB = playerBox.y + playerBox.height;
-        yvel = vel;
+    } else {
+        yB = playerBox.y + playerBox.height - 1;
     }
 
     if (yvel != 0) {
         int tileY = (yB + yvel) / TILE_HEIGHT;
         int leftTileX = playerBox.x / TILE_WIDTH;
-        int rightTileX = (playerBox.x + playerBox.width) / TILE_WIDTH;
+        int rightTileX = (playerBox.x + playerBox.width - 1) / TILE_WIDTH;
         bool collides = false;
+        float dist = yvel;
         for (int t = leftTileX; t <= rightTileX; t++) {
             if (LEVEL_1[tileY][t] > 0) {
                 collides = true;
+                isJumping = false;
+                yvel = 0;
+
+                if (playerBox.y > (tileY*TILE_HEIGHT+TILE_HEIGHT)) {
+                    dist = playerBox.y - (tileY*TILE_HEIGHT+TILE_HEIGHT);
+                } else {
+                    dist = (tileY*TILE_HEIGHT) - (playerBox.y + playerBox.height);
+                }
+
                 break;
             }
         }
-        if (!collides) {
-            playerBox.y += yvel;
-        }
+
+        playerBox.y += dist;
     }
 
     if (playerBox.x < MIN_X) {
