@@ -146,13 +146,13 @@ State game_processInput(unsigned char* keys) {
         for (int t = leftTileX; t <= rightTileX; t++) {
             if (LEVEL_1[tileY][t] > 0) {
                 collides = true;
-                isJumping = false;
                 yvel = 0;
 
-                if (playerBox.y > (tileY*TILE_HEIGHT+TILE_HEIGHT)) {
-                    dist = playerBox.y - (tileY*TILE_HEIGHT+TILE_HEIGHT);
+                if (playerBox.y >= (tileY*TILE_HEIGHT+TILE_HEIGHT)) {
+                    dist = (tileY*TILE_HEIGHT+TILE_HEIGHT) - playerBox.y;
                 } else {
                     dist = (tileY*TILE_HEIGHT) - (playerBox.y + playerBox.height);
+                    isJumping = false;
                 }
 
                 break;
