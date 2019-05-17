@@ -45,7 +45,7 @@ void menu_updateFrame() {
 
     drawBackground(BLACK);
 
-    al_draw_text(font, al_map_rgb(255,255,255), 100, 100, 0, "Press space to play");
+    al_draw_text(font, al_map_rgb(255,255,255), 50, 100, 0, "Press space to play");
 
     return;
 }

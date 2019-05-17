@@ -1,0 +1,4 @@
+source 'https://rubygems.org'
+
+# Reading TMX files
+gem 'nokogiri'
