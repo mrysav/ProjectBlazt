@@ -10,6 +10,7 @@
 #include "background.h"
 #include "util.h"
 #include "display.h"
+#include "entity.h"
 
 #include "level.h"
 #include "level1.h"
@@ -28,8 +29,10 @@ const GameState GAME_STATE = {
 // only draw up to one level of tiles offscreen
 #define MIN_DRAW -16
 #define MAX_DRAW 16
-#define PLAYER_HEIGHT 25
-#define PLAYER_WIDTH 10
+#define PLAYER_HEIGHT 16
+#define PLAYER_WIDTH 16
+#define PLAYER_SS_HEIGHT 2
+#define PLAYER_SS_WIDTH 4
 
 const static float PLAYER_X_OFFSET = (SCREEN_WIDTH / 2) - (PLAYER_WIDTH / 2);
 const static float PLAYER_Y_OFFSET = (SCREEN_HEIGHT / 2) - (PLAYER_HEIGHT / 2);
@@ -44,7 +47,7 @@ bool isJumping = false;
 float yvel = 0;
 
 RectangleF playerBox = {0, 0, PLAYER_WIDTH, PLAYER_HEIGHT};
-RectangleF camera = {0 - PLAYER_X_OFFSET, 0 - PLAYER_Y_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT};
+RectangleF camera = {-PLAYER_X_OFFSET, -PLAYER_Y_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT};
 
 int max_draw_x;
 int max_draw_y;
@@ -58,6 +61,7 @@ ALLEGRO_BITMAP *player;
 void game_loadResources()
 {
     tilemap = al_load_bitmap("image/tiles-alpha.png");
+    player = al_load_bitmap("image/ddave-char-trans.png");
 
     currentLevel = &LEVEL2;
 
@@ -67,11 +71,13 @@ void game_loadResources()
     max_move_x = currentLevel->width * TILE_WIDTH - PLAYER_WIDTH;
     max_move_y = currentLevel->height * TILE_WIDTH - PLAYER_HEIGHT;
 
+    player_init(&Player);
 }
 
 void game_unloadResources()
 {
     al_destroy_bitmap(tilemap);
+    al_destroy_bitmap(player);
 
     isJumping = false;
     yvel = 0;
@@ -117,6 +123,12 @@ State game_processInput(unsigned char *keys)
         {
             playerBox.x += xvel;
         }
+    }
+
+    if (xvel < 0) {
+        Player.facingLeft = true;
+    } else if (xvel > 0) {
+        Player.facingLeft = false;
     }
 
     float yB = 0;
@@ -180,6 +192,9 @@ State game_processInput(unsigned char *keys)
         playerBox.y += dist;
     }
 
+    Player.isMoving = (xvel != 0) || (yvel != 0);
+    Player.isJumping = isJumping;
+
     if (playerBox.x < 0)
     {
         playerBox.x = 0;
@@ -198,9 +213,10 @@ State game_processInput(unsigned char *keys)
         playerBox.y = max_move_y;
     }
 
+    player_tick(&Player);
+
     camera.x = playerBox.x - PLAYER_X_OFFSET;
-    camera.y = playerBox.y - PLAYER_Y_OFFSET
-;
+    camera.y = playerBox.y - PLAYER_Y_OFFSET;
 
     return GAME;
 }
@@ -228,20 +244,23 @@ void drawLevel()
     }
 }
 
-void drawPlayer()
+void drawPlayer(_Player* _player)
 {
     float x1 = playerBox.x - camera.x;
-    float x2 = x1 + playerBox.width;
     float y1 = playerBox.y - camera.y;
-    float y2 = y1 + playerBox.height;
-    al_draw_filled_rectangle(x1, y1, x2, y2, al_map_rgb(0, 0, 0));
+
+    int spriteId = _player->firstFrame + _player->animFrame;
+    int tx = spriteId % PLAYER_SS_WIDTH * PLAYER_WIDTH;
+    int ty = spriteId / PLAYER_SS_WIDTH * PLAYER_HEIGHT;
+
+    al_draw_bitmap_region(player, tx, ty, PLAYER_WIDTH, PLAYER_HEIGHT, x1, y1, 0);
 }
 
-void game_updateFrame()
+void game_updateFrame(int elapsedMillis)
 {
     drawBackground(SKY);
 
     drawLevel();
 
-    drawPlayer();
+    drawPlayer(&Player);
 }
