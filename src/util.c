@@ -1,6 +1,6 @@
 #include "util.h"
 
-bool intersects(RectangleF *rect1, RectangleF *rect2) {
+bool rect_intersects(RectangleF *rect1, RectangleF *rect2) {
   if (rect1->x > rect2->x || rect2->x > rect1->x) {
     return false;
   }

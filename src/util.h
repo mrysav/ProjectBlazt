@@ -2,6 +2,7 @@
 #define __UTILS_H__
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define max(a,b) \
    ({ __typeof__ (a) _a = (a); \
@@ -24,6 +25,13 @@ typedef struct RectangleF {
     float width;
     float height;
 } RectangleF;
+
+typedef struct Rect32 {
+    int_fast32_t x;
+    int_fast32_t y;
+    int_fast32_t width;
+    int_fast32_t height;
+} Rect32;
 
 bool intersects(RectangleF* rect1, RectangleF* rect2);
 

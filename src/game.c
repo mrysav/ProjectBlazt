@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_primitives.h>
@@ -10,17 +11,12 @@
 #include "background.h"
 #include "util.h"
 #include "display.h"
-#include "entity.h"
+#include "player.h"
 
 #include "level.h"
 #include "level1.h"
 #include "level2.h"
 
-const GameState GAME_STATE = {
-    &game_loadResources,
-    &game_processInput,
-    &game_updateFrame,
-    &game_unloadResources};
 
 #define TS_WIDTH 4
 #define TS_HEIGHT 28
@@ -29,87 +25,92 @@ const GameState GAME_STATE = {
 // only draw up to one level of tiles offscreen
 #define MIN_DRAW -16
 #define MAX_DRAW 16
-#define PLAYER_HEIGHT 16
-#define PLAYER_WIDTH 16
-#define PLAYER_SS_HEIGHT 2
-#define PLAYER_SS_WIDTH 4
-
-const static float PLAYER_X_OFFSET = (SCREEN_WIDTH / 2) - (PLAYER_WIDTH / 2);
-const static float PLAYER_Y_OFFSET = (SCREEN_HEIGHT / 2) - (PLAYER_HEIGHT / 2);
 
 const Level* currentLevel;
 
-const static float gravity = 4.0;
-const static float runSpeed = 2;
-const static float jumpVel = -12.0;
-
-bool isJumping = false;
-float yvel = 0;
-
-RectangleF playerBox = {0, 0, PLAYER_WIDTH, PLAYER_HEIGHT};
-RectangleF camera = {-PLAYER_X_OFFSET, -PLAYER_Y_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT};
-
-int max_draw_x;
-int max_draw_y;
-int max_move_x;
-int max_move_y;
+#define GRAVITY 6
+#define RUN_VEL 3
+#define JUMP_VEL -12;
 
 // Image resources
 ALLEGRO_BITMAP *tilemap;
-ALLEGRO_BITMAP *player;
+
+Player player;
+
+// Set when loadResources() is called
+uint_fast32_t map_total_width;
+uint_fast32_t map_total_height;
+uint_fast32_t max_draw_x;
+uint_fast32_t max_draw_y;
+uint_fast32_t max_move_x;
+uint_fast32_t max_move_y;
+int_fast32_t player_x_offset;
+int_fast32_t player_y_offset;
+Rect32 camera = {0};
+
+void loadLevel(const Level* level) {
+    currentLevel = level;
+    map_total_width = currentLevel->width * TILE_WIDTH;
+    map_total_height = currentLevel->height * TILE_HEIGHT;
+}
 
 void game_loadResources()
 {
     tilemap = al_load_bitmap("image/tiles-alpha.png");
-    player = al_load_bitmap("image/ddave-char-trans.png");
 
-    currentLevel = &LEVEL2;
+    loadLevel(&LEVEL2);
 
-    max_draw_x = currentLevel->width * TILE_WIDTH + MAX_DRAW;
-    max_draw_y = currentLevel->height * TILE_HEIGHT + MAX_DRAW;
+    player = player_init();
 
-    max_move_x = currentLevel->width * TILE_WIDTH - PLAYER_WIDTH;
-    max_move_y = currentLevel->height * TILE_WIDTH - PLAYER_HEIGHT;
+    max_draw_x = map_total_width + MAX_DRAW;
+    max_draw_y = map_total_height + MAX_DRAW;
 
-    player_init(&Player);
+    max_move_x = map_total_width - player.hitbox.width;
+    max_move_y = map_total_height - player.hitbox.height;
+
+    player_x_offset = -((SCREEN_WIDTH / 2) - (player.position.width / 2));
+    player_y_offset = -((SCREEN_HEIGHT / 2) - (player.position.height / 2));
+    
+    camera.x = player_x_offset;
+    camera.y = player_y_offset;
+    camera.width = SCREEN_WIDTH;
+    camera.height = SCREEN_HEIGHT;
 }
 
 void game_unloadResources()
 {
     al_destroy_bitmap(tilemap);
-    al_destroy_bitmap(player);
-
-    isJumping = false;
-    yvel = 0;
-    playerBox.x = 0;
-    playerBox.y = 0;
+    player_destroy(&player);
 }
 
 State game_processInput(unsigned char *keys)
 {
+    static bool isJumping;
+    static int_fast32_t yvel;
+
     if (keys[ALLEGRO_KEY_ESCAPE] == KEY_PRESSED)
     {
         return MENU;
     }
 
-    float xB = 0;
-    float xvel = 0;
+    int_fast32_t xB = 0;
+    int_fast32_t xvel = 0;
     if (keys[ALLEGRO_KEY_RIGHT] == KEY_HELD)
     {
-        xB = playerBox.x + playerBox.width - 1;
-        xvel = runSpeed;
+        xB = player.hitbox.x + player.hitbox.width - 1;
+        xvel = RUN_VEL;
     }
     else if (keys[ALLEGRO_KEY_LEFT] == KEY_HELD)
     {
-        xB = playerBox.x;
-        xvel = -runSpeed;
+        xB = player.hitbox.x;
+        xvel = -RUN_VEL;
     }
 
     if (xvel != 0)
     {
-        int tileX = (xB + xvel) / TILE_WIDTH;
-        int topTileY = playerBox.y / TILE_HEIGHT;
-        int botTileY = (playerBox.y + playerBox.height - 1) / TILE_HEIGHT;
+        int_fast32_t tileX = (xB + xvel) / TILE_WIDTH;
+        int_fast32_t topTileY = player.hitbox.y / TILE_HEIGHT;
+        int_fast32_t botTileY = (player.hitbox.y + player.hitbox.height - 1) / TILE_HEIGHT;
         bool collides = false;
         for (int t = topTileY; t <= botTileY; t++)
         {
@@ -121,45 +122,42 @@ State game_processInput(unsigned char *keys)
         }
         if (!collides)
         {
-            playerBox.x += xvel;
+            player.hitbox.x += xvel;
+            player.position.x += xvel;
         }
     }
 
     if (xvel < 0) {
-        Player.facingLeft = true;
+        player.facingLeft = true;
     } else if (xvel > 0) {
-        Player.facingLeft = false;
+        player.facingLeft = false;
     }
 
-    float yB = 0;
+    int_fast32_t yB = 0;
     if (keys[ALLEGRO_KEY_UP] == KEY_PRESSED && !isJumping)
     {
-        yvel = -12;
+        yvel = JUMP_VEL;
         isJumping = true;
     }
     else
     {
-        yvel += 1;
-        if (yvel > gravity)
-        {
-            yvel = gravity;
-        }
+        yvel = min(yvel + 1, GRAVITY);
     }
 
     if (yvel <= 0)
     {
-        yB = playerBox.y;
+        yB = player.hitbox.y;
     }
     else
     {
-        yB = playerBox.y + playerBox.height - 1;
+        yB = player.hitbox.y + player.hitbox.height - 1;
     }
 
     if (yvel != 0)
     {
         int tileY = (yB + yvel) / TILE_HEIGHT;
-        int leftTileX = playerBox.x / TILE_WIDTH;
-        int rightTileX = (playerBox.x + playerBox.width - 1) / TILE_WIDTH;
+        int leftTileX = player.hitbox.x / TILE_WIDTH;
+        int rightTileX = (player.hitbox.x + player.hitbox.width - 1) / TILE_WIDTH;
         bool collides = false;
         float dist = yvel;
         for (int t = leftTileX; t <= rightTileX; t++)
@@ -169,14 +167,14 @@ State game_processInput(unsigned char *keys)
                 collides = true;
                 yvel = 0;
 
-                if (playerBox.y >= (tileY * TILE_HEIGHT + TILE_HEIGHT))
+                if (player.hitbox.y >= (tileY * TILE_HEIGHT + TILE_HEIGHT))
                 {
-                    dist = (tileY * TILE_HEIGHT + TILE_HEIGHT) - playerBox.y;
+                    dist = (tileY * TILE_HEIGHT + TILE_HEIGHT) - player.hitbox.y;
                 }
                 else
                 {
                     // player is jumping and hit the tile above them
-                    dist = (tileY * TILE_HEIGHT) - (playerBox.y + playerBox.height);
+                    dist = (tileY * TILE_HEIGHT) - (player.hitbox.y + player.hitbox.height);
                     isJumping = false;
                 }
 
@@ -189,34 +187,17 @@ State game_processInput(unsigned char *keys)
             // so they can't jump while falling
             isJumping = true;
         }
-        playerBox.y += dist;
+        player.hitbox.y += dist;
+        player.position.y += dist;
     }
 
-    Player.isMoving = (xvel != 0) || (yvel != 0);
-    Player.isJumping = isJumping;
+    player.isMoving = (xvel != 0) || (yvel != 0);
+    player.isJumping = isJumping;
 
-    if (playerBox.x < 0)
-    {
-        playerBox.x = 0;
-    } 
-    else if (playerBox.x > max_move_x)
-    {
-        playerBox.x = max_move_x;
-    }
+    player_tick(&player);
 
-    if (playerBox.y < 0)
-    {
-        playerBox.y = 0;
-    }
-    else if (playerBox.y > max_move_y)
-    {
-        playerBox.y = max_move_y;
-    }
-
-    player_tick(&Player);
-
-    camera.x = playerBox.x - PLAYER_X_OFFSET;
-    camera.y = playerBox.y - PLAYER_Y_OFFSET;
+    camera.x = player.position.x + player_x_offset;
+    camera.y = player.position.y + player_y_offset;
 
     return GAME;
 }
@@ -244,23 +225,18 @@ void drawLevel()
     }
 }
 
-void drawPlayer(_Player* _player)
+void game_updateFrame()
 {
-    float x1 = playerBox.x - camera.x;
-    float y1 = playerBox.y - camera.y;
-
-    int spriteId = _player->firstFrame + _player->animFrame;
-    int tx = spriteId % PLAYER_SS_WIDTH * PLAYER_WIDTH;
-    int ty = spriteId / PLAYER_SS_WIDTH * PLAYER_HEIGHT;
-
-    al_draw_bitmap_region(player, tx, ty, PLAYER_WIDTH, PLAYER_HEIGHT, x1, y1, 0);
-}
-
-void game_updateFrame(int elapsedMillis)
-{
-    drawBackground(SKY);
+    background_draw_sky();
 
     drawLevel();
 
-    drawPlayer(&Player);
+    player_draw(&player, &camera);
 }
+
+const GameState GAME_STATE = {
+    &game_loadResources,
+    &game_processInput,
+    &game_updateFrame,
+    &game_unloadResources
+};

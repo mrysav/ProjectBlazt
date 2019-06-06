@@ -10,10 +10,6 @@
 #include "state.h"
 #include "background.h"
 
-const GameState MENU_STATE = { &menu_loadResources, &menu_processInput, &menu_updateFrame, &menu_unloadResources };
-
-MenuState menuState = { -1 };
-
 ALLEGRO_FONT* font;
 
 void menu_loadResources() {
@@ -43,9 +39,11 @@ State menu_processInput(unsigned char* keys) {
 
 void menu_updateFrame() {
 
-    drawBackground(BLACK);
+    background_draw_black();
 
     al_draw_text(font, al_map_rgb(255,255,255), 50, 100, 0, "Press space to play");
 
     return;
 }
+
+const GameState MENU_STATE = { &menu_loadResources, &menu_processInput, &menu_updateFrame, &menu_unloadResources };

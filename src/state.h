@@ -1,5 +1,4 @@
-#ifndef __STATE_H__
-#define __STATE_H__
+#pragma once
 
 typedef enum State {
     MENU,
@@ -13,5 +12,3 @@ typedef struct GameState {
     void (*updateDisplay) ();
     void (*unloadResources) ();
 } GameState;
-
-#endif

@@ -31,14 +31,11 @@ puts "writing #{l_u_name} to #{l_h_name} and #{l_c_name}..."
 
 File.open(l_h_name, 'w') do |file|
   file.write(%(
-#ifndef __#{l_u_name}_H__
-#define __#{l_u_name}_H__
+#pragma once
 
 #include "level.h"
 
 extern const Level #{l_u_name};
-
-#endif
   ).strip)
 end
 

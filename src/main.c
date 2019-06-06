@@ -74,8 +74,7 @@ int main()
     float y = 0;
     ALLEGRO_EVENT event;
 
-    unsigned char key[ALLEGRO_KEY_MAX];
-    memset(key, 0, sizeof(key));
+    unsigned char key[ALLEGRO_KEY_MAX] = {0};
 
     al_start_timer(timer);
 

@@ -20,9 +20,7 @@ include_directories(
     ${ALLEGRO_INCLUDE_DIRS}
 )
 
-file(GLOB all_SRCS
-        "${PROJECT_SOURCE_DIR}/src/*.c"
-        )
+file(GLOB all_SRCS "${PROJECT_SOURCE_DIR}/src/*.c")
 
 add_executable(ProjectBlazt ${all_SRCS})
 
@@ -34,5 +32,8 @@ target_link_libraries(ProjectBlazt
     m
     ${ALLEGRO_LIBRARIES}
 )
+
+set_property(TARGET ProjectBlazt PROPERTY C_STANDARD 11)
+set_property(TARGET ProjectBlazt PROPERTY C_STANDARD_REQUIRED true)
 
 file(COPY image DESTINATION .)

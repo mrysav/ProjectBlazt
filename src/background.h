@@ -1,11 +1,5 @@
-#ifndef __BACKGROUND_H__
-#define __BACKGROUND_H__
+# pragma once
 
-typedef enum Background {
-    BLACK,
-    SKY
-} Background;
+void background_draw_black();
 
-void drawBackground(Background bg);
-
-#endif
+void background_draw_sky();
