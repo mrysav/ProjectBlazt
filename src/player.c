@@ -6,15 +6,16 @@
 
 #include "player.h"
 
+#define WALK_SEQ_LEN 4
+const int_fast32_t walk_seq[WALK_SEQ_LEN] = {0, 1, 0, -1};
+
 // Sprite IDs + animations
 #define JUMPING_RIGHT 3
 #define STANDING_RIGHT 1
-#define WALKING_RIGHT 0
-#define WALKING_RIGHT_LEN 2
+#define WALKING_RIGHT 1
 #define JUMPING_LEFT 4
 #define STANDING_LEFT 6
-#define WALKING_LEFT 5
-#define WALKING_LEFT_LEN 2
+#define WALKING_LEFT 6
 
 // Spritesheet information
 #define SPRITE_HEIGHT 16
@@ -57,12 +58,14 @@ void player_destroy(Player* player) {
 }
 
 void player_tick(Player* player) {
-    static int delay = 0;
-    // 8 only animation once every 8th frame
-    delay = (++delay) % 6;
-    if (delay > 1) {
+    static int delay;
+    // only animate once every 4th frame
+    delay = (++delay) % 4;
+    if (delay > 0) {
         return;
-    } 
+    }
+
+    static int_fast32_t anim_seq;
 
     if (player->isMoving) {
         if (player->isJumping) {
@@ -70,7 +73,8 @@ void player_tick(Player* player) {
             player->animFrame = 0;
         } else {
             player->firstFrame = player->facingLeft ? WALKING_LEFT : WALKING_RIGHT;
-            player->animFrame = (++player->animFrame) % (player->facingLeft ? WALKING_LEFT_LEN : WALKING_RIGHT_LEN);
+            anim_seq = ++anim_seq % WALK_SEQ_LEN;
+            player->animFrame = walk_seq[anim_seq];
         }
     } else {
         player->firstFrame = player->facingLeft ? STANDING_LEFT : STANDING_RIGHT;

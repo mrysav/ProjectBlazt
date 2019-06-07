@@ -1,14 +1,15 @@
 # pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "util.h"
 
 // TODO: Maybe define spritesheet here?
 
 typedef struct Player {
-    int firstFrame;
-    int animFrame;
+    int_fast32_t firstFrame;
+    int_fast32_t animFrame;
     bool isJumping;
     bool facingLeft;
     bool isMoving;
