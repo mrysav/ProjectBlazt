@@ -12,6 +12,8 @@
 #include "util.h"
 #include "display.h"
 #include "player.h"
+#include "npc.h"
+#include "red_dude.h"
 
 #include "level.h"
 #include "level1.h"
@@ -30,12 +32,16 @@ const Level* currentLevel;
 
 #define GRAVITY 6
 #define RUN_VEL 3
-#define JUMP_VEL -12;
+#define JUMP_VEL -12
+#define MAX_NPC_COUNT 50
 
 // Image resources
 ALLEGRO_BITMAP *tilemap;
+// Shared spritesheet
+ALLEGRO_BITMAP *enem_sprites;
 
 Player player;
+NPC enemies[MAX_NPC_COUNT] = {0};
 
 // Set when loadResources() is called
 uint_fast32_t map_total_width;
@@ -48,6 +54,8 @@ int_fast32_t player_x_offset;
 int_fast32_t player_y_offset;
 Rect32 camera = {0};
 
+int_fast16_t numEnem = 0;
+
 void loadLevel(const Level* level) {
     currentLevel = level;
     map_total_width = currentLevel->width * TILE_WIDTH;
@@ -57,6 +65,7 @@ void loadLevel(const Level* level) {
 void game_loadResources()
 {
     tilemap = al_load_bitmap("image/tiles-alpha.png");
+    enem_sprites = al_load_bitmap("image/man-and-enemies.png");
 
     loadLevel(&LEVEL2);
 
@@ -80,11 +89,84 @@ void game_loadResources()
 void game_unloadResources()
 {
     al_destroy_bitmap(tilemap);
+    al_destroy_bitmap(enem_sprites);
     player_destroy(&player);
+}
+
+void spawnEnemy() {
+    if (numEnem >= 1) {
+        return;
+    }
+    enemies[numEnem] = red_dude;
+    Vec32 pos = {0,0};
+    enemies[numEnem].init(&enemies[numEnem], pos);
+    numEnem++;
+}
+
+gravdata calc_collide(int_fast32_t xvel, int_fast32_t xedge, int_fast32_t x, int_fast32_t width, 
+                      int_fast32_t yvel, int_fast32_t yedge, int_fast32_t y, int_fast32_t height) {
+    
+    gravdata res = {0};
+    
+    if (xvel != 0) 
+    {
+        int_fast32_t tileX = (xedge + xvel) / TILE_WIDTH;
+        int_fast32_t topTileY = y / TILE_HEIGHT;
+        int_fast32_t botTileY = (y + height - 1) / TILE_HEIGHT;
+        bool collides = false;
+        for (int_fast32_t t = topTileY; t <= botTileY; t++)
+        {
+            if (currentLevel->tiles[t][tileX] > 0)
+            {
+                collides = true;
+                break;
+            }
+        }
+        if (!collides)
+        {
+            res.xdist = xvel;
+        }
+    }
+
+    if (yvel != 0)
+    {
+        int_fast32_t tileY = (yedge + yvel) / TILE_HEIGHT;
+        int_fast32_t leftTileX = x / TILE_WIDTH;
+        int_fast32_t rightTileX = (x + width - 1) / TILE_WIDTH;
+        int_fast32_t dist = yvel;
+        for (int_fast32_t t = leftTileX; t <= rightTileX; t++)
+        {
+            if (currentLevel->tiles[tileY][t] > 0)
+            {
+                int_fast32_t tile_realY = tileY * TILE_HEIGHT;
+
+                // entity is falling and hits the floor
+                if (y >= (tile_realY + TILE_HEIGHT))
+                {
+                    dist = (tile_realY + TILE_HEIGHT) - y;
+                    res.hit_floor = true;
+                }
+                // entity is jumping and hit the tile above them
+                else
+                {
+                    dist = tile_realY - (y + height);
+                    res.hit_top = true;
+                }
+
+                break;
+            }
+        }
+
+        res.ydist = dist;
+    }
+
+    return res;
 }
 
 State game_processInput(unsigned char *keys)
 {
+    spawnEnemy();
+
     static bool isJumping;
     static int_fast32_t yvel;
 
@@ -104,27 +186,6 @@ State game_processInput(unsigned char *keys)
     {
         xB = player.hitbox.x;
         xvel = -RUN_VEL;
-    }
-
-    if (xvel != 0)
-    {
-        int_fast32_t tileX = (xB + xvel) / TILE_WIDTH;
-        int_fast32_t topTileY = player.hitbox.y / TILE_HEIGHT;
-        int_fast32_t botTileY = (player.hitbox.y + player.hitbox.height - 1) / TILE_HEIGHT;
-        bool collides = false;
-        for (int t = topTileY; t <= botTileY; t++)
-        {
-            if (currentLevel->tiles[t][tileX] > 0)
-            {
-                collides = true;
-                break;
-            }
-        }
-        if (!collides)
-        {
-            player.hitbox.x += xvel;
-            player.position.x += xvel;
-        }
     }
 
     if (xvel < 0) {
@@ -153,48 +214,35 @@ State game_processInput(unsigned char *keys)
         yB = player.hitbox.y + player.hitbox.height - 1;
     }
 
-    if (yvel != 0)
-    {
-        int tileY = (yB + yvel) / TILE_HEIGHT;
-        int leftTileX = player.hitbox.x / TILE_WIDTH;
-        int rightTileX = (player.hitbox.x + player.hitbox.width - 1) / TILE_WIDTH;
-        bool collides = false;
-        float dist = yvel;
-        for (int t = leftTileX; t <= rightTileX; t++)
-        {
-            if (currentLevel->tiles[tileY][t] > 0)
-            {
-                collides = true;
-                yvel = 0;
+    gravdata dat = calc_collide(xvel, xB, player.hitbox.x, player.hitbox.width,
+                                yvel, yB, player.hitbox.y, player.hitbox.height);
 
-                if (player.hitbox.y >= (tileY * TILE_HEIGHT + TILE_HEIGHT))
-                {
-                    dist = (tileY * TILE_HEIGHT + TILE_HEIGHT) - player.hitbox.y;
-                }
-                else
-                {
-                    // player is jumping and hit the tile above them
-                    dist = (tileY * TILE_HEIGHT) - (player.hitbox.y + player.hitbox.height);
-                    isJumping = false;
-                }
-
-                break;
-            }
+    if (isJumping) {
+        if (dat.hit_floor || dat.ydist == 0) {
+            isJumping = false;
         }
-
-        if (dist > 0 && !isJumping) {
-            // player is falling, so say they are jumping
-            // so they can't jump while falling
+    } else {
+        if (dat.ydist != 0) {
             isJumping = true;
         }
-        player.hitbox.y += dist;
-        player.position.y += dist;
     }
 
-    player.isMoving = (xvel != 0) || (yvel != 0);
+    player.hitbox.x += dat.xdist;
+    player.position.x += dat.xdist;
+
+    player.hitbox.y += dat.ydist;
+    player.position.y += dat.ydist;
+
+    player.isMoving = (xvel != 0) || (dat.ydist != 0);
     player.isJumping = isJumping;
 
     player_tick(&player);
+
+    for(uint_fast16_t i = 0; i < MAX_NPC_COUNT; i++) {
+        if (enemies[i].isInit) {
+            enemies[i].tick(&enemies[i], calc_collide);
+        }
+    }
 
     camera.x = player.position.x + player_x_offset;
     camera.y = player.position.y + player_y_offset;
@@ -232,6 +280,12 @@ void game_updateFrame()
     drawLevel();
 
     player_draw(&player, &camera);
+
+    for(uint_fast16_t i = 0; i < MAX_NPC_COUNT; i++) {
+        if (enemies[i].isInit) {
+            enemies[i].draw(&enemies[i], &camera, enem_sprites);
+        }
+    }
 }
 
 const GameState GAME_STATE = {

@@ -19,6 +19,11 @@ typedef struct VectorF {
     float y;
 } VectorF;
 
+typedef struct Vec32 {
+    int_fast32_t x;
+    int_fast32_t y;
+} Vec32;
+
 typedef struct RectangleF {
     float x;
     float y;
@@ -34,5 +39,7 @@ typedef struct Rect32 {
 } Rect32;
 
 bool intersects(RectangleF* rect1, RectangleF* rect2);
+bool intersects32(Rect32* rect1, Rect32* rect2);
+
 
 #endif
