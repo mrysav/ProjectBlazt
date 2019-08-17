@@ -20,6 +20,6 @@ typedef struct Player {
 Player player_init();
 void player_destroy(Player* player);
 
-void player_tick(Player* player);
+void player_tick(Player* player, int_fast32_t delay);
 
 void player_draw(Player* player, Rect32* camera);

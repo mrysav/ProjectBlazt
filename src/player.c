@@ -57,11 +57,9 @@ void player_destroy(Player* player) {
     player->isMoving = false;
 }
 
-void player_tick(Player* player) {
-    static int delay;
+void player_tick(Player* player, int_fast32_t delay) {
     // only animate once every 4th frame
-    delay = (++delay) % 4;
-    if (delay > 0) {
+    if ((delay % 4) > 0) {
         return;
     }
 

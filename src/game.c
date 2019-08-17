@@ -28,6 +28,7 @@
 #define MIN_DRAW -16
 #define MAX_DRAW 16
 
+const Level* ALL_LEVELS[2] = { &LEVEL_1, &LEVEL2 };
 const Level* currentLevel;
 
 #define GRAVITY 6
@@ -67,7 +68,7 @@ void game_loadResources()
     tilemap = al_load_bitmap("image/tiles-alpha.png");
     enem_sprites = al_load_bitmap("image/man-and-enemies.png");
 
-    loadLevel(&LEVEL2);
+    loadLevel(ALL_LEVELS[0]);
 
     player = player_init();
 
@@ -94,7 +95,13 @@ void game_unloadResources()
 }
 
 void spawnEnemy() {
-    if (numEnem >= 1) {
+    static int_fast8_t delay = 0;
+    delay = (++delay) % 30;
+    if (delay > 0) {
+        return;
+    }
+
+    if (numEnem >= 10) {
         return;
     }
     enemies[numEnem] = red_dude;
@@ -165,6 +172,9 @@ gravdata calc_collide(int_fast32_t xvel, int_fast32_t xedge, int_fast32_t x, int
 
 State game_processInput(unsigned char *keys)
 {
+    static int_fast32_t delay;
+    delay = (++delay) % 12;
+
     spawnEnemy();
 
     static bool isJumping;
@@ -236,11 +246,11 @@ State game_processInput(unsigned char *keys)
     player.isMoving = (xvel != 0) || (dat.ydist != 0);
     player.isJumping = isJumping;
 
-    player_tick(&player);
+    player_tick(&player, delay);
 
     for(uint_fast16_t i = 0; i < MAX_NPC_COUNT; i++) {
         if (enemies[i].isInit) {
-            enemies[i].tick(&enemies[i], calc_collide);
+            enemies[i].tick(&enemies[i], calc_collide, delay);
         }
     }
 

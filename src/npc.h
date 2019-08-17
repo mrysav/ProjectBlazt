@@ -21,13 +21,14 @@ typedef gravdata (*jumpfunc) (int_fast32_t xvel, int_fast32_t xedge, int_fast32_
 
 typedef struct NPC {
     void (*init) (struct NPC* npc, Vec32 pos);
-    void (*tick) (struct NPC* npc, jumpfunc jump);
+    void (*tick) (struct NPC* npc, jumpfunc jump, int_fast32_t delay);
     void (*collide) (struct NPC* npc, uint_fast8_t x, uint_fast8_t y);
     void (*draw) (struct NPC* npc, Rect32* camera, ALLEGRO_BITMAP* spritesheet);
 
     bool isInit;
 
     int_fast8_t firstFrame;
+    int_fast8_t animSeq;
     int_fast8_t animFrame;
     bool isJumping;
     bool facingLeft;
