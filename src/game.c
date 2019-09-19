@@ -16,8 +16,7 @@
 #include "red_dude.h"
 
 #include "level.h"
-#include "level1.h"
-#include "level2.h"
+#include "underground_1.h"
 
 
 #define TS_WIDTH 4
@@ -28,7 +27,7 @@
 #define MIN_DRAW -16
 #define MAX_DRAW 16
 
-const Level* ALL_LEVELS[2] = { &LEVEL_1, &LEVEL2 };
+const Level* ALL_LEVELS[3] = { &UNDERGROUND_1 };
 const Level* currentLevel;
 
 #define GRAVITY 6
@@ -147,17 +146,17 @@ gravdata calc_collide(int_fast32_t xvel, int_fast32_t xedge, int_fast32_t x, int
             {
                 int_fast32_t tile_realY = tileY * TILE_HEIGHT;
 
-                // entity is falling and hits the floor
+                // entity would go through the ceiling
                 if (y >= (tile_realY + TILE_HEIGHT))
                 {
                     dist = (tile_realY + TILE_HEIGHT) - y;
-                    res.hit_floor = true;
+                    res.hit_top = true;
                 }
-                // entity is jumping and hit the tile above them
+                // entity would go through the floor
                 else
                 {
                     dist = tile_realY - (y + height);
-                    res.hit_top = true;
+                    res.hit_floor = true;
                 }
 
                 break;
@@ -228,8 +227,11 @@ State game_processInput(unsigned char *keys)
                                 yvel, yB, player.hitbox.y, player.hitbox.height);
 
     if (isJumping) {
-        if (dat.hit_floor || dat.ydist == 0) {
+        if (dat.hit_floor) {
             isJumping = false;
+        }
+        if (dat.hit_top) {
+            yvel = 0;
         }
     } else {
         if (dat.ydist != 0) {
@@ -237,11 +239,26 @@ State game_processInput(unsigned char *keys)
         }
     }
 
-    player.hitbox.x += dat.xdist;
-    player.position.x += dat.xdist;
+    int_fast32_t new_x = player.position.x + dat.xdist;
+    int_fast32_t new_y = player.position.y + dat.ydist;
 
-    player.hitbox.y += dat.ydist;
-    player.position.y += dat.ydist;
+    if (new_x < 0) {
+        new_x = 0;
+    }
+
+    if (new_x > max_move_x) {
+        new_x = max_move_x;
+    }
+
+    if (new_y < 0) {
+        new_y = 0;
+    }
+
+    if (new_y > max_move_y) {
+        new_y = max_move_y;
+    }
+
+    player_setPosition(&player, new_x, new_y);
 
     player.isMoving = (xvel != 0) || (dat.ydist != 0);
     player.isJumping = isJumping;

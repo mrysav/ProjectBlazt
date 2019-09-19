@@ -46,8 +46,15 @@ void init_red_dude(NPC* this, Vec32 pos) {
 void tick_red_dude(NPC* this, jumpfunc jump, int_fast32_t delay) {
 
     // de brainzz
-    int_fast32_t xvel = this->facingLeft ? -1 : 1;
-    int_fast32_t xedge = this->hitbox.x + this->hitbox.width;
+    int_fast32_t xvel;
+    int_fast32_t xedge;
+    if (this->facingLeft) {
+        xvel = -1;
+        xedge = this->hitbox.x;
+    } else {
+        xvel = 1;
+        xedge = this->hitbox.x + this->hitbox.width;
+    }
 
     int_fast32_t yvel = 3;
     int_fast32_t yedge = this->hitbox.y + this->hitbox.height;

@@ -57,6 +57,13 @@ void player_destroy(Player* player) {
     player->isMoving = false;
 }
 
+void player_setPosition(Player* this, int_fast32_t x, int_fast32_t y) {
+    this->position.x = x;
+    this->position.y = y;
+    this->hitbox.x = this->position.x + HITBOX_OFF_X;
+    this->hitbox.y = this->position.y + HITBOX_OFF_Y;
+}
+
 void player_tick(Player* player, int_fast32_t delay) {
     // only animate once every 4th frame
     if ((delay % 4) > 0) {

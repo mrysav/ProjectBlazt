@@ -23,3 +23,5 @@ void player_destroy(Player* player);
 void player_tick(Player* player, int_fast32_t delay);
 
 void player_draw(Player* player, Rect32* camera);
+
+void player_setPosition(Player* this, int_fast32_t x, int_fast32_t y);
